@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriBridge - AI Translation for Agriculture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
+    
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .hover-lift {
+      transition: all 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .recording-active {
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradientShift 2s ease infinite;
+    }
+    
+    .dark-theme {
+      background: linear-gradient(135deg, #1e3a8a 0%, #312e81 50%, #1e1b4b 100%);
+      color: white;
+    }
+    
+    .dark-theme .glass-effect {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: white;
+    }
+    
+    .dark-theme .text-gray-600 { color: #cbd5e1 !important; }
+    .dark-theme .text-gray-700 { color: #e2e8f0 !important; }
+    .dark-theme .text-indigo-600, .dark-theme .text-purple-600 { color: #a5b4fc !important; }
+    .dark-theme .text-green-700 { color: #6ee7b7 !important; }
+    .dark-theme .bg-white { background-color: #1e293b !important; }
+    
+    .success-message {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      margin: 10px 0;
+      animation: fadeInUp 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen transition-all duration-500" id="body">
+  <div class="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-teal-100" id="background"></div>
+  
+  <!-- Theme & Language Toggle -->
+  <div class="fixed top-4 right-4 z-50">
+    <div class="glass-effect rounded-full p-2 hover-lift">
+      <button id="langToggle" class="flex items-center space-x-2 px-4 py-2 rounded-full bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors">
+        <span id="langText">EN</span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="fixed top-4 left-4 z-50">
+    <div class="glass-effect rounded-full p-2 hover-lift">
+      <button id="themeToggle" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center transition-colors">
+        <div class="w-4 h-4 bg-yellow-400 rounded-full transition-transform" id="themeIcon"></div>
+      </button>
+    </div>
+  </div>
+  
+  <div class="relative z-10 max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="text-center mb-12 animate-fadeInUp">
+      <h1 class="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+        AgriBridge
+      </h1>
+      <p class="text-xl text-gray-600 font-medium" id="subtitle">
+        AI-powered translation for agricultural communication
+      </p>
+      <div class="mt-4 w-24 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto rounded-full"></div>
+    </header>
+
+    <!-- Main Form -->
+    <div class="glass-effect rounded-3xl shadow-2xl p-8 animate-fadeInUp hover-lift">
+      <form id="translationForm" class="space-y-8">
+        
+        <!-- Text Input -->
+        <div>
+          <label for="input_text" class="block text-lg font-semibold text-gray-700 mb-3" id="textInputLabel">
+            Text Input
+          </label>
+          <textarea
+            id="input_text"
+            name="input_text"
+            rows="5"
+            placeholder="Enter your text here or use audio input below..."
+            class="w-full p-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300 resize-none text-lg"
+          ></textarea>
+        </div>
+
+        <!-- Audio Input -->
+        <div class="glass-effect rounded-2xl p-6">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4" id="audioInputTitle">Audio Input</h3>
+          
+          <div class="flex flex-wrap gap-4 mb-6">
+            <button type="button" id="recordButton" class="flex-1 min-w-[200px] flex items-center justify-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all duration-300 hover-lift">
+              <div class="w-3 h-3 bg-white rounded-full mr-3"></div>
+              <span id="recordText">Start Recording</span>
+            </button>
+            
+            <button type="button" id="stopButton" class="flex-1 min-w-[200px] flex items-center justify-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-semibold rounded-xl transition-all duration-300 hidden hover-lift">
+              <div class="w-3 h-3 bg-white mr-3"></div>
+              <span id="stopText">Stop Recording</span>
+            </button>
+
+            <button type="button" id="clearButton" class="flex-1 min-w-[200px] flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl transition-all duration-300 hover-lift hidden">
+              <span id="clearText">Clear & Reset</span>
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label for="audio_file" class="block text-base font-medium text-gray-600 mb-3" id="uploadLabel">
+                Or upload audio file (.wav, .mp3, .m4a):
+              </label>
+              <input type="file" id="audio_file" name="audio_file" accept=".wav,.mp3,.m4a,.ogg" class="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-400 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+            </div>
+
+            <div>
+              <label for="audio_lang" class="block text-base font-medium text-gray-600 mb-2" id="audioLangLabel">
+                Audio Language:
+              </label>
+              <select id="audio_lang" name="audio_lang" class="w-full p-3 border-2 border-gray-200 rounded-xl text-gray-500 focus:ring-4 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300 text-lg">
+                <option value="vi">Vietnamese</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+
+          <audio id="audioPlayback" controls class="w-full mt-4 rounded-xl hidden"></audio>
+        </div>
+
+        <!-- Translation Direction -->
+        <div>
+          <label for="task" class="block text-lg font-semibold text-gray-700 mb-3" id="taskLabel">
+            Translation Direction
+          </label>
+          <select id="task" name="task" class="w-full p-4 border-2 border-gray-200 rounded-2xl text-gray-500 focus:ring-4 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300 text-lg">
+            <option value="en_to_vi_farmer" id="option1">English → Vietnamese → Farmer Language</option>
+            <option value="farmer_to_sci" id="option2">Farmer Language → Scientific Vietnamese</option>
+            <option value="sci_to_farmer" id="option3">Scientific Vietnamese → Farmer Language</option>
+            <option value="farmer_to_sci_en" id="option4">Farmer Language → Scientific → English</option>
+          </select>
+        </div>
+        
+        <!-- Image preview 
+        <div class="mt-4 text-center">
+          <img id="modeImage" src="" alt="Mode preview" class="max-w-xs mx-auto rounded-xl shadow-lg hidden">
+        </div>
+        -->
+        <!-- Translate Button -->
+        <button type="submit" id="translateButton" class="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-lg rounded-2xl transition-all duration-300 hover-lift transform hover:scale-[1.02] focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+          <span id="translateText">Translate</span>
+          <div id="loadingSpinner" class="hidden inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+        </button>
+
+        <div id="statusDisplay" class="text-center text-base text-gray-600 min-h-[24px] font-medium"></div>
+      </form>
+
+      <!-- Result Section -->
+      <div id="resultSection" class="mt-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-2xl hidden animate-fadeInUp">
+        <h3 class="text-xl font-bold text-green-700 mb-3" id="resultTitle">Translation Result:</h3>
+        <div class="bg-white rounded-xl p-4 shadow-inner">
+          <p id="resultText" class="text-gray-700 whitespace-pre-wrap text-lg leading-relaxed"></p>
+        </div>
+        <div id="ttsControls" class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200 hidden">
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.776L4.838 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.838l3.545-3.776z" clip-rule="evenodd"/>
+                <path d="M15.657 6.343a1 1 0 011.414 0 5 5 0 010 7.071 1 1 0 11-1.414-1.414 3 3 0 000-4.243 1 1 0 010-1.414z"/>
+                <path d="M13.243 8.757a1 1 0 011.414 0 1.5 1.5 0 010 2.122 1 1 0 01-1.414-1.415.5.5 0 000-.707 1 1 0 010-1.414z"/>
+              </svg>
+              <span class="text-blue-700 font-medium">Audio Output:</span>
+            </div>
+            
+            <audio id="ttsAudioPlayer" controls class="flex-1 max-w-md h-8">
+              Your browser does not support the audio element.
+            </audio>
+            
+            <button id="playTtsButton" class="hidden px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-sm">
+              <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+              </svg>
+              Play
+            </button>
+          </div>
+        </div>
+        <button id="copyButton" class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors hover-lift">
+          <span id="copyText">Copy Result</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Language translations
+    const translations = {
+      vi: {
+        subtitle: "Cầu nối giữa nhà khoa học và người nông dân",
+        textInputLabel: "Nhập văn bản",
+        audioInputTitle: "Nhập âm thanh",
+        recordText: "Bắt đầu ghi âm",
+        stopText: "Dừng ghi âm",
+        clearText: "Xóa & Đặt lại",
+        uploadLabel: "Hoặc tải lên tệp âm thanh (.wav, .mp3, .m4a):",
+        audioLangLabel: "Ngôn ngữ âm thanh:",
+        taskLabel: "Hướng dịch thuật",
+        option1: "Tiếng Anh → Tiếng Việt → Ngôn ngữ nông dân",
+        option2: "Ngôn ngữ nông dân → Tiếng Việt khoa học",
+        option3: "Tiếng Việt khoa học → Ngôn ngữ nông dân",
+        option4: "Ngôn ngữ nông dân → Khoa học → Tiếng Anh",
+        translateText: "Dịch thuật",
+        resultTitle: "Kết quả dịch thuật:",
+        copyText: "Sao chép kết quả",
+        copied: "Đã sao chép!",
+        recording: "Đang ghi âm...",
+        processing: "Đang xử lý...",
+        microphoneError: "Không thể truy cập microphone. Vui lòng cho phép truy cập.",
+        placeholder: "Nhập văn bản của bạn tại đây hoặc sử dụng nhập âm thanh bên dưới...",
+        error: "Lỗi xảy ra khi dịch thuật.",
+        cacheCleared: "Đã xoá"
+      },
+      en: {
+        subtitle: "Connection between scientist and farmer",
+        textInputLabel: "Text Input",
+        audioInputTitle: "Audio Input",
+        recordText: "Start Recording",
+        stopText: "Stop Recording",
+        clearText: "Clear & Reset",
+        uploadLabel: "Or upload audio file (.wav, .mp3, .m4a):",
+        audioLangLabel: "Audio Language:",
+        taskLabel: "Translation Direction",
+        option1: "English → Vietnamese → Farmer Language",
+        option2: "Farmer Language → Scientific Vietnamese",
+        option3: "Scientific Vietnamese → Farmer Language",
+        option4: "Farmer Language → Scientific → English",
+        translateText: "Translate",
+        resultTitle: "Translation Result:",
+        copyText: "Copy Result",
+        copied: "Copied!",
+        recording: "Recording...",
+        processing: "Processing...",
+        microphoneError: "Could not access microphone. Please allow access.",
+        placeholder: "Enter your text here or use audio input below...",
+        error: "Error occurred during translation.",
+        cacheCleared: "Cleared"
+      }
+    };
+    
+    let currentLang = 'vi';
+    let isDarkTheme = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let currentStream = null;
+    let objectUrls = []; // Track URLs for cleanup
+    
+    // DOM Elements
+    const elements = {
+      recordButton: document.getElementById('recordButton'),
+      stopButton: document.getElementById('stopButton'),
+      clearButton: document.getElementById('clearButton'),
+      audioPlayback: document.getElementById('audioPlayback'),
+      inputTextarea: document.getElementById('input_text'),
+      audioFileInput: document.getElementById('audio_file'),
+      statusDisplay: document.getElementById('statusDisplay'),
+      translateButton: document.getElementById('translateButton'),
+      translateText: document.getElementById('translateText'),
+      loadingSpinner: document.getElementById('loadingSpinner'),
+      resultSection: document.getElementById('resultSection'),
+      resultText: document.getElementById('resultText'),
+      copyButton: document.getElementById('copyButton'),
+      form: document.getElementById('translationForm'),
+      ttsAudioPlayer: document.getElementById('ttsAudioPlayer'),
+      playTtsButton: document.getElementById('playTtsButton'),
+      ttsControls: document.getElementById('ttsControls')
+    };
+    
+    // Language switching
+    function switchLanguage() {
+      currentLang = currentLang === 'vi' ? 'en' : 'vi';
+      updateLanguage();
+      document.getElementById('langText').textContent = currentLang === 'vi' ? 'EN' : 'VI';
+    }
+    
+    function updateLanguage() {
+      const t = translations[currentLang];
+      document.getElementById('subtitle').textContent = t.subtitle;
+      document.getElementById('textInputLabel').textContent = t.textInputLabel;
+      document.getElementById('audioInputTitle').textContent = t.audioInputTitle;
+      document.getElementById('recordText').textContent = t.recordText;
+      document.getElementById('stopText').textContent = t.stopText;
+      document.getElementById('clearText').textContent = t.clearText;
+      document.getElementById('uploadLabel').textContent = t.uploadLabel;
+      document.getElementById('audioLangLabel').textContent = t.audioLangLabel;
+      document.getElementById('taskLabel').textContent = t.taskLabel;
+      document.getElementById('option1').textContent = t.option1;
+      document.getElementById('option2').textContent = t.option2;
+      document.getElementById('option3').textContent = t.option3;
+      document.getElementById('option4').textContent = t.option4;
+      document.getElementById('translateText').textContent = t.translateText;
+      document.getElementById('resultTitle').textContent = t.resultTitle;
+      document.getElementById('copyText').textContent = t.copyText;
+      elements.inputTextarea.placeholder = t.placeholder;
+    }
+    
+    // Theme switching
+    function switchTheme() {
+      isDarkTheme = !isDarkTheme;
+      const body = document.getElementById('body');
+      const background = document.getElementById('background');
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (isDarkTheme) {
+        body.classList.add('dark-theme');
+        background.className = 'absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900';
+        themeIcon.style.transform = 'translateX(100%)';
+      } else {
+        body.classList.remove('dark-theme');
+        background.className = 'absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-teal-100';
+        themeIcon.style.transform = 'translateX(0)';
+      }
+    }
+
+    function clearAll() {
+      cleanup();
+      
+      // Clear all object URLs
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+      objectUrls = [];
+      
+      // Reset form elements
+      elements.audioFileInput.value = '';
+      elements.audioPlayback.classList.add('hidden');
+      elements.audioPlayback.src = '';
+      elements.inputTextarea.value = '';
+      elements.resultSection.classList.add('hidden');
+      
+      // Hide TTS controls
+      elements.ttsControls.classList.add('hidden');
+      elements.playTtsButton.classList.add('hidden');
+      elements.ttsAudioPlayer.src = '';
+      
+      // Show cache cleared message
+      elements.statusDisplay.innerHTML = `<div class="success-message">
+        ${translations[currentLang].cacheCleared}
+      </div>`;
+      
+      setTimeout(() => {
+        elements.statusDisplay.textContent = '';
+      }, 3000);
+      
+      updateUI();
+    }
+
+
+    // Cleanup audio resources
+    function cleanup() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      mediaRecorder = null;
+      audioChunks = [];
+      isRecording = false;
+    }
+
+    // Start recording
+    async function startRecording() {
+      try {
+        cleanup();
+        
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+        });
+        
+        currentStream = stream;
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        isRecording = true;
+        
+        elements.audioFileInput.value = '';
+        elements.audioPlayback.classList.add('hidden');
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          if (audioChunks.length > 0) {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            objectUrls.push(audioUrl);
+            
+            elements.audioPlayback.src = audioUrl;
+            elements.audioPlayback.classList.remove('hidden');
+            
+            submitAudio(audioBlob);
+          }
+          cleanup();
+          updateUI();
+        };
+
+        mediaRecorder.start(100);
+        updateUI();
+        elements.statusDisplay.textContent = translations[currentLang].recording;
+
+      } catch (error) {
+        console.error('Microphone access error:', error);
+        elements.statusDisplay.textContent = translations[currentLang].microphoneError;
+        cleanup();
+        updateUI();
+      }
+    }
+
+    // Stop recording
+    function stopRecording() {
+      if (mediaRecorder && isRecording && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        elements.statusDisplay.textContent = translations[currentLang].processing;
+      }
+    }
+
+    // Submit audio for translation
+    async function submitAudio(audioBlob) {
+      const formData = new FormData();
+      formData.append('task', document.getElementById('task').value);
+      formData.append('audio_file', audioBlob, 'recorded_audio.webm');
+      formData.append('audio_lang', document.getElementById('audio_lang').value);
+      formData.append('input_text', '');
+      await submitForm(formData);
+    }
+
+    // Submit form for translation
+    async function submitForm(formData) {
+      setLoading(true);
+      elements.statusDisplay.textContent = translations[currentLang].processing;
+
+      try {
+        const response = await fetch('/', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          if (data.input && data.input !== formData.get('input_text')) {
+            elements.inputTextarea.value = data.input;
+          }
+          showResult(data.output, data.tts_audio); // Pass TTS audio data
+        } else {
+          elements.statusDisplay.textContent = data.output || translations[currentLang].error;
+        }
+
+      } catch (error) {
+        console.error('Translation error:', error);
+        elements.statusDisplay.textContent = translations[currentLang].error;
+      } finally {
+        setLoading(false);
+        updateUI();
+      }
+    }
+
+
+    // Set loading state
+    function setLoading(loading) {
+      elements.translateButton.disabled = loading;
+      elements.translateText.style.display = loading ? 'none' : 'inline';
+      elements.loadingSpinner.style.display = loading ? 'inline-block' : 'none';
+      
+      if (loading) {
+        elements.translateButton.classList.add('opacity-75');
+      } else {
+        elements.translateButton.classList.remove('opacity-75');
+        setTimeout(() => {
+          if (!elements.statusDisplay.textContent.includes(translations[currentLang].error)) {
+            elements.statusDisplay.textContent = '';
+          }
+        }, 3000);
+      }
+    }
+
+    function playTTSAudio(audioBase64) {
+      if (!audioBase64) return;
+      
+      try {
+        // Convert base64 to blob
+        const audioBytes = atob(audioBase64);
+        const audioArray = new Uint8Array(audioBytes.length);
+        for (let i = 0; i < audioBytes.length; i++) {
+          audioArray[i] = audioBytes.charCodeAt(i);
+        }
+        
+        const audioBlob = new Blob([audioArray], { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        objectUrls.push(audioUrl);
+        
+        // Set audio source and play
+        elements.ttsAudioPlayer.src = audioUrl;
+        elements.ttsControls.classList.remove('hidden');
+        
+        // Auto-play the TTS audio
+        elements.ttsAudioPlayer.play().catch(error => {
+          console.log('Auto-play prevented:', error);
+          // Show play button if auto-play fails
+          elements.playTtsButton.classList.remove('hidden');
+        });
+        
+      } catch (error) {
+        console.error('Error playing TTS audio:', error);
+      }
+    }
+
+    // Show translation result
+    function showResult(result, ttsAudio = null) {
+      elements.resultText.textContent = result;
+      elements.resultSection.classList.remove('hidden');
+      
+      // Handle TTS audio if available
+      if (ttsAudio) {
+        playTTSAudio(ttsAudio);
+      } else {
+        elements.ttsControls.classList.add('hidden');
+        elements.playTtsButton.classList.add('hidden');
+      }
+      
+      elements.resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Update UI based on current state
+    function updateUI() {
+      const hasText = elements.inputTextarea.value.trim().length > 0;
+      const hasAudioFile = elements.audioFileInput.files.length > 0;
+      const hasAnyContent = hasText || hasAudioFile || isRecording || elements.audioPlayback.src;
+
+      // Update input states
+      elements.inputTextarea.disabled = hasAudioFile || isRecording;
+      elements.audioFileInput.disabled = hasText || isRecording;
+
+      // Show/hide buttons
+      elements.recordButton.classList.toggle('hidden', isRecording || hasText || hasAudioFile);
+      elements.stopButton.classList.toggle('hidden', !isRecording);
+      elements.clearButton.classList.toggle('hidden', !hasAnyContent);
+      
+      // Recording animation
+      elements.recordButton.classList.toggle('recording-active', isRecording);
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Button events
+      elements.recordButton.addEventListener('click', startRecording);
+      elements.stopButton.addEventListener('click', stopRecording);
+      elements.clearButton.addEventListener('click', clearAll);
+      
+      // Form events
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(elements.form);
+        submitForm(formData);
+      });
+      
+      // Input events
+      elements.audioFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          const file = e.target.files[0];
+          const url = URL.createObjectURL(file);
+          objectUrls.push(url);
+          elements.audioPlayback.src = url;
+          elements.audioPlayback.classList.remove('hidden');
+          elements.inputTextarea.value = '';
+        }
+        updateUI();
+      });
+      
+      elements.inputTextarea.addEventListener('input', () => {
+        if (elements.inputTextarea.value.trim().length > 0) {
+          elements.audioFileInput.value = '';
+          elements.audioPlayback.classList.add('hidden');
+          elements.audioPlayback.src = '';
+        }
+        updateUI();
+      });
+      
+      // Copy button
+      elements.copyButton.addEventListener('click', () => {
+        navigator.clipboard.writeText(elements.resultText.textContent);
+        const originalText = elements.copyButton.querySelector('span').textContent;
+        elements.copyButton.querySelector('span').textContent = translations[currentLang].copied;
+        setTimeout(() => {
+          elements.copyButton.querySelector('span').textContent = originalText;
+        }, 2000);
+      });
+      
+      if (elements.playTtsButton) {
+        elements.playTtsButton.addEventListener('click', () => {
+          if (elements.ttsAudioPlayer.src) {
+            elements.ttsAudioPlayer.play();
+            elements.playTtsButton.classList.add('hidden');
+          }
+        });
+      }
+      
+      // TTS audio ended event
+      if (elements.ttsAudioPlayer) {
+        elements.ttsAudioPlayer.addEventListener('ended', () => {
+          elements.playTtsButton.classList.remove('hidden');
+        });
+        
+        elements.ttsAudioPlayer.addEventListener('play', () => {
+          elements.playTtsButton.classList.add('hidden');
+        });
+      }
+      
+      // Toggle buttons
+      document.getElementById('langToggle').addEventListener('click', switchLanguage);
+      document.getElementById('themeToggle').addEventListener('click', switchTheme);
+      
+      // Initialize
+      updateLanguage();
+      updateUI();
+      
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        cleanup();
+        objectUrls.forEach(url => URL.revokeObjectURL(url));
+      });
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+      const taskSelect = document.getElementById('task');
+      const backgroundDiv = document.getElementById('background');
+      const modeImage = document.getElementById('modeImage');
+  
+      // Map option -> ảnh + vị trí
+      const imageMap = {
+          "en_to_vi_farmer": { src: "{{ url_for('static', filename='images/scientist.png') }}", position: "left center" },
+          "farmer_to_sci": { src: "{{ url_for('static', filename='images/farmer.png') }}", position: "right center" },
+          "sci_to_farmer": { src: "{{ url_for('static', filename='images/scientist.png') }}", position: "left center" },
+          "farmer_to_sci_en": { src: "{{ url_for('static', filename='images/farmer.png') }}", position: "right center" }
+      };
+  
+      function updateBackground(taskValue) {
+          const config = imageMap[taskValue];
+          if (config) {
+              backgroundDiv.style.backgroundImage = `url('${config.src}')`;
+              backgroundDiv.style.backgroundRepeat = "no-repeat";
+              backgroundDiv.style.backgroundPosition = config.position; 
+              backgroundDiv.style.backgroundSize = "contain";
+  
+              // Ảnh preview
+              // modeImage.src = config.src;
+              // modeImage.classList.remove('hidden');
+          }
+      }
+  
+      // Lần đầu load
+      updateBackground(taskSelect.value);
+  
+      // Khi thay đổi option
+      taskSelect.addEventListener('change', function () {
+          updateBackground(this.value);
+      });
+  });
+  </script>
+</body>
+</html>

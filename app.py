@@ -38,8 +38,8 @@ TRANSLATION_MAP = {
     "farmer_to_sci_en": farmer_to_sci_en_pipeline
 }
 from openai import OpenAI
-OPENAI_API_KEY = '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'
-# Đảm bảo có API key
+import os
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")y
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def refine_text_with_chatgpt(text):
